@@ -1,16 +1,13 @@
 import {
   pgTable, uuid, bigint, text, boolean, integer, real, timestamp, index
 } from 'drizzle-orm/pg-core';
-import { repositories } from './repositories.js';
 
 export const pipelineRuns = pgTable(
   'pipeline_runs',
   {
     id: uuid('id').primaryKey().defaultRandom(),
     workspaceId: uuid('workspace_id').notNull(),
-    repoId: uuid('repo_id')
-      .notNull()
-      .references(() => repositories.id, { onDelete: 'cascade' }),
+    repoId: uuid('repo_id').notNull(),
     githubRunId: bigint('github_run_id', { mode: 'number' }).notNull(),
     workflowId: bigint('workflow_id', { mode: 'number' }),
     workflowName: text('workflow_name').notNull(),
@@ -27,8 +24,8 @@ export const pipelineRuns = pgTable(
     leadTimeSeconds: integer('lead_time_seconds'),
     recoveryTimeSeconds: integer('recovery_time_seconds'),
     failProbability: real('fail_probability'),
-    predictionFeatures: text('prediction_features'), // JSON
-    postmortem: text('postmortem'), // JSON
+    predictionFeatures: text('prediction_features'),
+    postmortem: text('postmortem'),
     postmortemGeneratedAt: timestamp('postmortem_generated_at', { withTimezone: true }),
     pullRequestNumber: integer('pull_request_number'),
     pullRequestId: bigint('pull_request_id', { mode: 'number' }),
@@ -67,9 +64,7 @@ export const pullRequests = pgTable(
   'pull_requests',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    repoId: uuid('repo_id')
-      .notNull()
-      .references(() => repositories.id, { onDelete: 'cascade' }),
+    repoId: uuid('repo_id').notNull(),
     workspaceId: uuid('workspace_id').notNull(),
     githubPrId: bigint('github_pr_id', { mode: 'number' }).notNull(),
     prNumber: integer('pr_number').notNull(),
@@ -83,7 +78,7 @@ export const pullRequests = pgTable(
     additions: integer('additions'),
     deletions: integer('deletions'),
     changedFiles: integer('changed_files'),
-    filePaths: text('file_paths'), // JSON array
+    filePaths: text('file_paths'),
     hasTestFiles: boolean('has_test_files'),
     hasConfigFiles: boolean('has_config_files'),
     hasMigrationFiles: boolean('has_migration_files'),

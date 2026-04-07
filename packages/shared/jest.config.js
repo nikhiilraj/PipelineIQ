@@ -7,7 +7,17 @@ export default {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', { useESM: true }],
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        useESM: true,
+        tsconfig: {
+          module: 'ESNext',
+          moduleResolution: 'bundler',
+        },
+      },
+    ],
   },
   testMatch: ['**/__tests__/**/*.test.ts'],
+  roots: ['<rootDir>/src'],
 };

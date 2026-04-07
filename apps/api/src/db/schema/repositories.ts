@@ -1,19 +1,13 @@
 import {
   pgTable, uuid, bigint, text, boolean, integer, real, timestamp, index, unique
 } from 'drizzle-orm/pg-core';
-import { workspaces } from './workspaces.js';
-import { githubInstallations } from './github.js';
 
 export const repositories = pgTable(
   'repositories',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    workspaceId: uuid('workspace_id')
-      .notNull()
-      .references(() => workspaces.id, { onDelete: 'cascade' }),
-    installationId: uuid('installation_id')
-      .notNull()
-      .references(() => githubInstallations.id),
+    workspaceId: uuid('workspace_id').notNull(),
+    installationId: uuid('installation_id').notNull(),
     githubRepoId: bigint('github_repo_id', { mode: 'number' }).unique().notNull(),
     fullName: text('full_name').notNull(),
     name: text('name').notNull(),
@@ -23,7 +17,6 @@ export const repositories = pgTable(
     language: text('language'),
     deployBranchPattern: text('deploy_branch_pattern').default('main|master|production'),
     deployWorkflowPattern: text('deploy_workflow_pattern').default('.*deploy.*|.*release.*|.*prod.*'),
-    // Cached DORA metrics
     doraDeploymentFrequency30d: real('dora_deployment_frequency_30d'),
     doraLeadTimeP50Seconds: integer('dora_lead_time_p50_seconds'),
     doraMttrP50Seconds: integer('dora_mttr_p50_seconds'),
@@ -46,9 +39,7 @@ export const authorStats = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     workspaceId: uuid('workspace_id').notNull(),
-    repoId: uuid('repo_id')
-      .notNull()
-      .references(() => repositories.id, { onDelete: 'cascade' }),
+    repoId: uuid('repo_id').notNull(),
     authorLogin: text('author_login').notNull(),
     totalPrs90d: integer('total_prs_90d').notNull().default(0),
     failedPrs90d: integer('failed_prs_90d').notNull().default(0),

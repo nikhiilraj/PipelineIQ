@@ -1,15 +1,11 @@
 import {
   pgTable, uuid, text, boolean, real, timestamp
 } from 'drizzle-orm/pg-core';
-import { workspaces } from './workspaces.js';
-import { repositories } from './repositories.js';
 
 export const alertRules = pgTable('alert_rules', {
   id: uuid('id').primaryKey().defaultRandom(),
-  workspaceId: uuid('workspace_id')
-    .notNull()
-    .references(() => workspaces.id, { onDelete: 'cascade' }),
-  repoId: uuid('repo_id').references(() => repositories.id),
+  workspaceId: uuid('workspace_id').notNull(),
+  repoId: uuid('repo_id'),
   name: text('name').notNull(),
   metric: text('metric').notNull(),
   condition: text('condition').notNull(),
@@ -21,12 +17,10 @@ export const alertRules = pgTable('alert_rules', {
 
 export const alertChannels = pgTable('alert_channels', {
   id: uuid('id').primaryKey().defaultRandom(),
-  workspaceId: uuid('workspace_id')
-    .notNull()
-    .references(() => workspaces.id, { onDelete: 'cascade' }),
+  workspaceId: uuid('workspace_id').notNull(),
   name: text('name').notNull(),
   type: text('type').notNull(),
-  config: text('config').notNull(), // JSON (encrypted at app layer)
+  config: text('config').notNull(),
   isActive: boolean('is_active').notNull().default(true),
   lastTestStatus: text('last_test_status').default('never'),
   lastTestedAt: timestamp('last_tested_at', { withTimezone: true }),

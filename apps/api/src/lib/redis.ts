@@ -1,8 +1,8 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 
-let _redis: Redis | null = null;
+let _redis: InstanceType<typeof Redis> | null = null;
 
-export function getRedis(): Redis {
+export function getRedis(): InstanceType<typeof Redis> {
   if (_redis) return _redis;
 
   const url = process.env['REDIS_URL'];
@@ -14,7 +14,7 @@ export function getRedis(): Redis {
     enableReadyCheck: true,
   });
 
-  _redis.on('error', (err) => {
+  _redis.on('error', (err: Error) => {
     console.error('[Redis] Connection error:', err.message);
   });
 

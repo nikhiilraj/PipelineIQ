@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { type FastifyError } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -12,19 +12,21 @@ const IS_DEV = process.env['NODE_ENV'] !== 'production';
 async function build() {
   const fastify = Fastify({
     logger: IS_DEV
-      ? { transport: { target: 'pino-pretty', options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' } } }
+      ? {
+          transport: {
+            target: 'pino-pretty',
+            options: { translateTime: 'HH:MM:ss', ignore: 'pid,hostname' },
+          },
+        }
       : true,
   });
 
-  // --- Plugins ---
   await fastify.register(cors, {
     origin: process.env['FRONTEND_URL'] ?? 'http://localhost:3002',
     credentials: true,
   });
 
-  await fastify.register(helmet, {
-    contentSecurityPolicy: false, // Managed by Caddy in production
-  });
+  await fastify.register(helmet, { contentSecurityPolicy: false });
 
   await fastify.register(rateLimit, {
     max: 200,
@@ -33,19 +35,17 @@ async function build() {
     keyGenerator: (req) => req.ip,
   });
 
-  // --- Health check ---
   fastify.get('/health', async () => ({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    env: process.env['NODE_ENV'],
+    env: process.env['NODE_ENV'] ?? 'development',
   }));
 
-  // --- Routes ---
   await fastify.register(authRoutes, { prefix: '/api/v1/auth' });
   await fastify.register(workspaceRoutes, { prefix: '/api/v1/workspaces' });
 
-  // --- Error handler ---
-  fastify.setErrorHandler((error, req, reply) => {
+  // FastifyError is a typed subclass of Error — safe to access .statusCode and .message
+  fastify.setErrorHandler((error: FastifyError, req, reply) => {
     fastify.log.error({ err: error, url: req.url, method: req.method }, 'Unhandled error');
     return reply.code(error.statusCode ?? 500).send({
       success: false,
@@ -69,8 +69,8 @@ async function start() {
     process.exit(0);
   };
 
-  process.on('SIGTERM', () => shutdown('SIGTERM'));
-  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => void shutdown('SIGTERM'));
+  process.on('SIGINT', () => void shutdown('SIGINT'));
 
   try {
     await fastify.listen({ port: PORT, host: '0.0.0.0' });
@@ -80,4 +80,4 @@ async function start() {
   }
 }
 
-start();
+void start();
