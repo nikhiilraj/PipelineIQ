@@ -1,0 +1,23 @@
+# Local development — Postgres and Redis run locally if you don't have Neon/Upstash yet
+# Production uses Neon.tech + Upstash (no local DB in prod)
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pipelineiq
+      POSTGRES_USER: pipelineiq
+      POSTGRES_PASSWORD: pipelineiq_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass pipelineiq_dev
+
+volumes:
+  postgres_data:
