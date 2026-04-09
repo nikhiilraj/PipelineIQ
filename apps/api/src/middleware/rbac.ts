@@ -9,15 +9,25 @@ const ROLE_RANK: Record<WorkspaceMemberRole, number> = {
   viewer: 1,
 };
 
+// Use a looser type that Fastify's preHandler accepts — extract workspaceId at runtime
 export function requireWorkspaceMember(minRole: WorkspaceMemberRole = 'viewer') {
-  return async (req: FastifyRequest<{ Params: { workspaceId?: string } }>, reply: FastifyReply): Promise<void> => {
+  return async (req: FastifyRequest, reply: FastifyReply): Promise<void> => {
     if (!req.user) {
-      return reply.code(401).send({ success: false, error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
+      return reply.code(401).send({
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'Authentication required' },
+      });
     }
 
-    const workspaceId = req.params.workspaceId;
+    // Extract workspaceId from params at runtime (works for any route with :workspaceId)
+    const params = req.params as Record<string, string>;
+    const workspaceId = params['workspaceId'];
+
     if (!workspaceId) {
-      return reply.code(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'workspaceId required' } });
+      return reply.code(400).send({
+        success: false,
+        error: { code: 'BAD_REQUEST', message: 'workspaceId required' },
+      });
     }
 
     const member = await db.query.workspaceMembers.findFirst({
@@ -28,7 +38,10 @@ export function requireWorkspaceMember(minRole: WorkspaceMemberRole = 'viewer') 
     });
 
     if (!member) {
-      return reply.code(403).send({ success: false, error: { code: 'FORBIDDEN', message: 'Access denied' } });
+      return reply.code(403).send({
+        success: false,
+        error: { code: 'FORBIDDEN', message: 'Access denied' },
+      });
     }
 
     const memberRank = ROLE_RANK[member.role as WorkspaceMemberRole] ?? 0;
@@ -37,7 +50,10 @@ export function requireWorkspaceMember(minRole: WorkspaceMemberRole = 'viewer') 
     if (memberRank < requiredRank) {
       return reply.code(403).send({
         success: false,
-        error: { code: 'INSUFFICIENT_PERMISSIONS', message: `Requires ${minRole} role or higher` },
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: `Requires ${minRole} role or higher`,
+        },
       });
     }
   };

@@ -51,12 +51,7 @@ export const workspaceRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const { name, slug } = body.data;
-
-    // Check slug availability
-    const existing = await db.query.workspaces.findFirst({
-      where: eq(schema.workspaces.slug, slug),
-    });
-
+    const existing = await db.query.workspaces.findFirst({ where: eq(schema.workspaces.slug, slug) });
     if (existing) {
       return reply.code(409).send({
         success: false,
@@ -65,7 +60,6 @@ export const workspaceRoutes: FastifyPluginAsync = async (fastify) => {
     }
 
     const planLimits = PLAN_LIMITS['free'];
-
     const [workspace] = await db
       .insert(schema.workspaces)
       .values({
@@ -84,15 +78,12 @@ export const workspaceRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.code(500).send({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to create workspace' } });
     }
 
-    // Add owner as member
     await db.insert(schema.workspaceMembers).values({
       workspaceId: workspace.id,
       userId: req.user!.userId,
       role: 'owner',
       acceptedAt: new Date(),
     });
-
-    req.log.info({ workspaceId: workspace.id, userId: req.user!.userId }, 'Workspace created');
 
     return reply.code(201).send({
       success: true,
@@ -115,12 +106,10 @@ export const workspaceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/:workspaceId',
     { preHandler: [requireAuth, requireWorkspaceMember('viewer')] },
-    async (req: FastifyRequest<{ Params: { workspaceId: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const { workspaceId } = req.params as { workspaceId: string };
       const workspace = await db.query.workspaces.findFirst({
-        where: and(
-          eq(schema.workspaces.id, req.params.workspaceId),
-          isNull(schema.workspaces.deletedAt)
-        ),
+        where: and(eq(schema.workspaces.id, workspaceId), isNull(schema.workspaces.deletedAt)),
       });
 
       if (!workspace) {
@@ -135,9 +124,10 @@ export const workspaceRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/:workspaceId/members',
     { preHandler: [requireAuth, requireWorkspaceMember('viewer')] },
-    async (req: FastifyRequest<{ Params: { workspaceId: string } }>, reply: FastifyReply) => {
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const { workspaceId } = req.params as { workspaceId: string };
       const members = await db.query.workspaceMembers.findMany({
-        where: eq(schema.workspaceMembers.workspaceId, req.params.workspaceId),
+        where: eq(schema.workspaceMembers.workspaceId, workspaceId),
         with: { user: { columns: { id: true, name: true, email: true, avatarUrl: true } } },
       });
 
